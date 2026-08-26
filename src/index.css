@@ -1,0 +1,114 @@
+@import "tailwindcss";
+
+/* ============================================================
+   iDEAL SalesHub – Design System
+   Primary  : #1565C0  (iDEAL brand blue)
+   Secondary: #FFFFFF
+   Accent   : #D32F2F  (red – errors / destructive / warnings)
+   Neutral  : Gray scale
+   ============================================================ */
+
+@theme {
+  /* ── Brand Colors ── */
+  --color-brand-50:  #E3F2FD;
+  --color-brand-100: #BBDEFB;
+  --color-brand-200: #90CAF9;
+  --color-brand-300: #64B5F6;
+  --color-brand-400: #42A5F5;
+  --color-brand-500: #2196F3;
+  --color-brand-600: #1E88E5;
+  --color-brand-700: #1976D2;
+  --color-brand-800: #1565C0;   /* ← PRIMARY – exact iDEAL blue */
+  --color-brand-900: #0D47A1;
+  --color-brand-950: #082B6E;
+
+  /* ── Danger / Accent Red ── */
+  --color-danger-50:  #FFEBEE;
+  --color-danger-100: #FFCDD2;
+  --color-danger-200: #EF9A9A;
+  --color-danger-300: #E57373;
+  --color-danger-400: #EF5350;
+  --color-danger-500: #F44336;
+  --color-danger-600: #E53935;
+  --color-danger-700: #D32F2F;  /* ← ACCENT red */
+  --color-danger-800: #C62828;
+  --color-danger-900: #B71C1C;
+
+  /* ── Neutral ── */
+  --color-neutral-50:  #FAFAFA;
+  --color-neutral-100: #F5F5F5;
+  --color-neutral-200: #EEEEEE;
+  --color-neutral-300: #E0E0E0;
+  --color-neutral-400: #BDBDBD;
+  --color-neutral-500: #9E9E9E;
+  --color-neutral-600: #757575;
+  --color-neutral-700: #616161;
+  --color-neutral-800: #424242;
+  --color-neutral-900: #212121;
+
+  /* ── Success / Warning ── */
+  --color-success-500: #4CAF50;
+  --color-success-600: #43A047;
+  --color-warning-400: #FFA726;
+  --color-warning-500: #FF9800;
+
+  /* ── Typography ── */
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* ── Radius ── */
+  --radius-sm:  4px;
+  --radius-md:  8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+}
+
+/* ── Reset & Base ── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  color: #212121;
+  background-color: #F5F5F5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Focus ring (accessible) ── */
+:focus-visible {
+  outline: 2px solid #1565C0;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #EEEEEE;
+}
+::-webkit-scrollbar-thumb {
+  background: #BDBDBD;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #1565C0;
+}

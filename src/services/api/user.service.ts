@@ -106,11 +106,12 @@ export async function createUserApi(data: CreateUserRequest): Promise<UserRespon
 
 /**
  * POST /api/users/:id/approve
- * DevOrAdmin only. Activates a pending marketer account.
+ * DevOrAdmin only. Activates a pending marketer and assigns them to a distributor.
+ * DistributorId is required — the backend enforces this at approval time.
  */
-export async function approveMarketerApi(id: string): Promise<void> {
+export async function approveMarketerApi(id: string, data: AssignDistributorRequest): Promise<void> {
   try {
-    await apiClient.post(`/users/${id}/approve`)
+    await apiClient.post(`/users/${id}/approve`, data)
   } catch (err) {
     throw normalizeApiError(err)
   }

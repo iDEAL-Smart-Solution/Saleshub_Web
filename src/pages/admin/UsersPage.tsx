@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Search, UserPlus, CheckCircle } from 'lucide-react'
 import { useUsers } from '@/features/users'
-import { UserStatusBadge, CreateUserModal, UserDetailModal } from '@/features/users'
+import {
+  UserStatusBadge,
+  CreateUserModal,
+  UserDetailModal,
+  ApproveMarketerModal,
+} from '@/features/users'
 import { useDisclosure } from '@/hooks/useDisclosure'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { Button, Badge, Input, PageHeader, Card } from '@/components/common'
@@ -13,23 +18,27 @@ export default function UsersPage() {
   usePageTitle('Users')
 
   const {
-    users, pendingMarketers, selectedUser,
+    users, pendingMarketers, distributors, selectedUser,
     isLoading, isActionLoading, error,
-    fetchAllUsers, fetchPendingMarketers, fetchUserById,
+    fetchAllUsers, fetchPendingMarketers, fetchDistributors, fetchUserById,
     createUser, approveMarketer, activateUser, deactivateUser,
     clearError,
   } = useUsers()
 
   const createModal  = useDisclosure()
   const detailModal  = useDisclosure()
+  const approveModal = useDisclosure()
+
   const [search, setSearch] = useState('')
   const [createError, setCreateError] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
+  const [selectedMarketer, setSelectedMarketer] = useState<UserSummaryResponse | null>(null)
 
   useEffect(() => {
     void fetchAllUsers()
     void fetchPendingMarketers()
-  }, [fetchAllUsers, fetchPendingMarketers])
+    void fetchDistributors()
+  }, [fetchAllUsers, fetchPendingMarketers, fetchDistributors])
 
   const filtered = users.filter((u) => {
     const q = search.toLowerCase()
@@ -46,6 +55,20 @@ export default function UsersPage() {
     detailModal.open()
   }
 
+  const handleOpenApprove = (marketer: UserSummaryResponse) => {
+    setSelectedMarketer(marketer)
+    approveModal.open()
+  }
+
+  const handleApprove = async (marketerId: string, distributorId: string): Promise<boolean> => {
+    const ok = await approveMarketer(marketerId, distributorId)
+    if (ok) {
+      flash('Marketer approved and assigned.')
+      void fetchPendingMarketers()
+    }
+    return ok
+  }
+
   const handleCreate = async (data: CreateUserRequest): Promise<boolean> => {
     setCreateError(null)
     const ok = await createUser(data)
@@ -55,11 +78,6 @@ export default function UsersPage() {
     }
     flash('User created successfully.')
     return true
-  }
-
-  const handleApprove = async (id: string) => {
-    const ok = await approveMarketer(id)
-    if (ok) flash('Marketer approved.')
   }
 
   const handleActivate = async (id: string) => {
@@ -143,7 +161,7 @@ export default function UsersPage() {
         </div>
       )}
 
-      {error && !createModal.isOpen && (
+      {error && !createModal.isOpen && !approveModal.isOpen && (
         <ErrorState message={error} onRetry={() => { clearError(); void fetchAllUsers() }} />
       )}
 
@@ -172,8 +190,7 @@ export default function UsersPage() {
                   </Button>
                   <Button
                     size="sm"
-                    isLoading={isActionLoading}
-                    onClick={() => handleApprove(u.id)}
+                    onClick={() => handleOpenApprove(u)}
                   >
                     Approve
                   </Button>
@@ -213,6 +230,7 @@ export default function UsersPage() {
         onSubmit={handleCreate}
         isLoading={isActionLoading}
         error={createError}
+        distributors={distributors}
       />
 
       <UserDetailModal
@@ -223,6 +241,16 @@ export default function UsersPage() {
         onActivate={handleActivate}
         onDeactivate={handleDeactivate}
         isActionLoading={isActionLoading}
+      />
+
+      <ApproveMarketerModal
+        isOpen={approveModal.isOpen}
+        onClose={() => { approveModal.close(); setSelectedMarketer(null) }}
+        marketer={selectedMarketer}
+        distributors={distributors}
+        isLoading={isActionLoading}
+        error={error}
+        onSubmit={handleApprove}
       />
     </div>
   )

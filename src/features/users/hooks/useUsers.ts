@@ -58,10 +58,15 @@ export function useUsers() {
     finally { s.setActionLoading(false) }
   }, [fetchAllUsers])
 
-  const approveMarketer = useCallback(async (id: string): Promise<boolean> => {
+  const approveMarketer = useCallback(async (id: string, distributorId: string): Promise<boolean> => {
     const s = useUserStore.getState()
     s.setActionLoading(true); s.setError(null)
-    try { await approveMarketerApi(id); s.removeUserFromList(id); await fetchAllUsers(); return true }
+    try {
+      await approveMarketerApi(id, { distributorId })
+      s.removeUserFromList(id)
+      await fetchAllUsers()
+      return true
+    }
     catch (err) { s.setError(normalizeApiError(err).message); return false }
     finally { s.setActionLoading(false) }
   }, [fetchAllUsers])

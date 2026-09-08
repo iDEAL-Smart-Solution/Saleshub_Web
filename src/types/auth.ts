@@ -33,6 +33,8 @@ export interface UserResponse {
   lastModifiedAt?: string | null
   lastLoginAt?: string | null
   roles: Role[]
+  distributorId?: string | null
+  distributorName?: string | null
 }
 
 // ── Matches backend UserSummaryResponse (list view) ──────────────────────────
@@ -47,9 +49,18 @@ export interface UserSummaryResponse {
 }
 
 // ── Matches backend MarketerSummaryResponse ───────────────────────────────────
-// Lightweight DTO returned by GET /api/users/marketers (MarketingLeadOrAbove).
-// Does not expose roles array or creation date — callers already know role context.
 export interface MarketerSummaryResponse {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  isActive: boolean
+  distributorId?: string | null
+  distributorName?: string | null
+}
+
+// ── Matches backend DistributorSummaryResponse ────────────────────────────────
+export interface DistributorSummaryResponse {
   id: string
   firstName: string
   lastName: string
@@ -110,8 +121,14 @@ export interface CreateUserRequest {
   role: Role
   password: string
   confirmPassword: string
+  /** Required when role === 'Marketer'. Omit when caller is a Distributor (auto-assigned). */
+  distributorId?: string
 }
 
 export interface ChangeUserRoleRequest {
   newRole: Role
+}
+
+export interface AssignDistributorRequest {
+  distributorId: string
 }

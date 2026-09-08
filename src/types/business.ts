@@ -19,9 +19,11 @@ export const CommissionStatus = {
 export type CommissionStatus = (typeof CommissionStatus)[keyof typeof CommissionStatus]
 
 export const CommissionType = {
-  KpiReward:  0,
-  Bonus:      1,
-  Adjustment: 2,
+  KpiReward:     0,
+  Bonus:         1,
+  Adjustment:    2,
+  Distributor:   3,
+  MarketingLead: 4,
 } as const
 export type CommissionType = (typeof CommissionType)[keyof typeof CommissionType]
 
@@ -109,6 +111,9 @@ export interface SaleResponse {
   status: SaleStatus
   recordedById: string
   recordedByName: string
+  /** Snapshot of the Distributor at the time the sale was created. */
+  distributorId?: string | null
+  distributorName?: string | null
   confirmedAt?: string | null
   confirmedById?: string | null
   confirmedByName?: string | null
@@ -200,13 +205,19 @@ export interface PerformanceComparisonResponse {
 
 export interface CommissionResponse {
   id: string
+  /** The marketer whose sale/KPI generated this commission. */
   marketerId: string
   marketerName: string
+  /** The actual recipient of the commission payment. */
+  beneficiaryId: string
+  beneficiaryName: string
   monthlyPerformanceId: string
   performanceYear: number
   performanceMonth: number
   saleId?: string | null
   type: CommissionType
+  /** Rate snapshot at generation time. Null for flat-amount commissions (KpiReward). */
+  rate?: number | null
   amount: number
   status: CommissionStatus
   description?: string | null

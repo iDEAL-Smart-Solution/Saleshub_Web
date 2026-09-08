@@ -29,10 +29,6 @@ export default defineConfig({
   },
 
   build: {
-    // The app is a single-page application with a deliberately monolithic bundle.
-    // The dynamic imports in client.ts are intentional (circular-dep avoidance),
-    // not a code-splitting opportunity, so we raise the warning threshold rather
-    // than restructure the architecture for marginal gain.
     chunkSizeWarningLimit: 600,
   },
 })

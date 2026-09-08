@@ -17,4 +17,11 @@ describe('hasAtLeastRole', () => {
   it('Marketer has at least Marketer privilege', () => {
     expect(hasAtLeastRole(ROLES.MARKETER, ROLES.MARKETER)).toBe(true)
   })
+  it('Distributor is NOT in the linear hierarchy — does not rank above Marketer', () => {
+    // Distributor is intentionally outside ROLE_HIERARCHY; indexOf returns -1
+    expect(hasAtLeastRole(ROLES.DISTRIBUTOR, ROLES.MARKETER)).toBe(false)
+  })
+  it('Distributor does NOT have Admin privilege via hierarchy', () => {
+    expect(hasAtLeastRole(ROLES.DISTRIBUTOR, ROLES.ADMIN)).toBe(false)
+  })
 })

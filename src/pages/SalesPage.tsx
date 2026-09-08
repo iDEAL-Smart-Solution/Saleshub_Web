@@ -8,7 +8,7 @@ import { usePageTitle } from '@/hooks/usePageTitle'
 import { useSales } from '@/features/sales'
 import { useProducts } from '@/features/products'
 import { useCustomers } from '@/features/customers'
-import { useUsers, useMarketers } from '@/features/users'
+import { useMarketers } from '@/features/users'
 import SaleStatusBadge from '@/features/sales/components/SaleStatusBadge'
 import SaleFormModal from '@/features/sales/components/SaleFormModal'
 import RejectSaleModal from '@/features/sales/components/RejectSaleModal'
@@ -19,20 +19,33 @@ import {
   type CreateSaleRequest,
   type RejectSaleRequest,
   type SaleSummaryResponse,
-  type UserSummaryResponse,
 } from '@/types'
 import { formatCurrency, formatDate } from '@/utils/formatters'
 
-interface Props { scope: 'all' | 'mine'; canRecord?: boolean }
+/**
+ * scope:
+ *   'all'         — Admin/Dev/MarketingLead: all sales
+ *   'mine'        — Marketer: own sales (view only)
+ *   'distributor' — Distributor: assigned marketers' sales
+ *
+ * canRecord:
+ *   true  — Admin, Dev, MarketingLead, Distributor (must select marketer)
+ *   false — Marketer (view only)
+ */
+interface Props {
+  scope: 'all' | 'mine' | 'distributor'
+  canRecord?: boolean
+}
 
 export default function SalesPage({ scope, canRecord = false }: Props) {
-  usePageTitle(scope === 'mine' ? 'My Sales' : 'Sales')
+  const title = scope === 'mine' ? 'My Sales'
+    : scope === 'distributor' ? 'Team Sales'
+    : 'Sales'
+  usePageTitle(title)
 
-  const salesApi   = useSales()
-  const products   = useProducts()
-  const customers  = useCustomers()
-  // Admin/Dev use the full user list; MarketingLead uses the lighter marketer-only endpoint
-  const users      = useUsers()
+  const salesApi     = useSales()
+  const products     = useProducts()
+  const customers    = useCustomers()
   const marketerList = useMarketers()
 
   const recordModal = useDisclosure()
@@ -40,141 +53,122 @@ export default function SalesPage({ scope, canRecord = false }: Props) {
   const [rejectingId, setRejectingId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
 
-  const role       = useAuthStore((s) => s.user?.roles[0])
-  const canConfirm = role === ROLES.DEV || role === ROLES.ADMIN
-  const isMLRecorder = canRecord && role === ROLES.MARKETING_LEAD
+  const role = useAuthStore((s) => s.user?.roles[0])
 
-  const { fetchMySales, fetchAllSales } = salesApi
-  const { fetchActiveProducts }         = products
-  const { fetchCustomers }              = customers
+  // Approve = Admin, Dev, MarketingLead
+  const canApprove =
+    role === ROLES.DEV || role === ROLES.ADMIN || role === ROLES.MARKETING_LEAD
+
+  const { fetchMySales, fetchAllSales, fetchDistributorSales } = salesApi
+  const { fetchActiveProducts } = products
+  const { fetchCustomers }      = customers
 
   useEffect(() => {
-    void (scope === 'mine' ? fetchMySales() : fetchAllSales())
-  }, [scope, fetchAllSales, fetchMySales])
+    if (scope === 'mine')        void fetchMySales()
+    else if (scope === 'distributor') void fetchDistributorSales()
+    else                         void fetchAllSales()
+  }, [scope, fetchAllSales, fetchMySales, fetchDistributorSales])
 
   useEffect(() => {
     if (!canRecord) return
     void fetchActiveProducts()
     void fetchCustomers()
-    if (isMLRecorder) {
-      // ML uses the dedicated marketer-list endpoint
-      void marketerList.fetchMarketers()
-    } else {
-      // Admin/Dev fetch the full user list and filter client-side
-      void users.fetchAllUsers()
-    }
+    // All recorders need the marketer list to pick who the sale is for
+    void marketerList.fetchMarketers()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canRecord, isMLRecorder])
+  }, [canRecord])
 
-  const sales = scope === 'mine' ? salesApi.mySales : salesApi.sales
+  const displaySales =
+    scope === 'mine'        ? salesApi.mySales
+    : scope === 'distributor' ? salesApi.distributorSales
+    : salesApi.sales
+
   const shown = useMemo(
     () =>
-      sales.filter((s) =>
+      displaySales.filter((s) =>
         `${s.marketerName} ${s.customerName} ${s.productName}`
           .toLowerCase()
           .includes(search.toLowerCase()),
       ),
-    [sales, search],
+    [displaySales, search],
   )
 
-  const openReject = (id: string) => {
-    setRejectingId(id)
-    rejectModal.open()
-  }
+  const openReject = (id: string) => { setRejectingId(id); rejectModal.open() }
 
   const handleReject = async (data: RejectSaleRequest): Promise<boolean> => {
     if (!rejectingId) return false
     const ok = await salesApi.rejectSale(rejectingId, data)
-    if (ok) setRejectingId(null)
+    if (ok) {
+      setRejectingId(null)
+      void (scope === 'distributor' ? fetchDistributorSales() : fetchAllSales())
+    }
     return ok
   }
 
-  // Build the marketer options for the sale form modal.
-  // Admin/Dev: filter the full user list to Marketer role.
-  // MarketingLead: use the dedicated MarketerSummaryResponse list.
-  const marketerOptions: UserSummaryResponse[] = isMLRecorder
-    ? marketerList.marketers.map((m) => ({
-        id: m.id,
-        firstName: m.firstName,
-        lastName: m.lastName,
-        email: m.email,
-        isActive: m.isActive,
-        roles: [ROLES.MARKETER],
-        createdAt: '',
-      }))
-    : users.users.filter((u) => u.roles.includes(ROLES.MARKETER))
+  const submit = async (data: CreateSaleRequest): Promise<boolean> => {
+    const ok = await salesApi.createSale(data)
+    if (ok) {
+      recordModal.close()
+      if (scope === 'distributor') void fetchDistributorSales()
+      else                         void fetchAllSales()
+    }
+    return ok
+  }
+
+  const subtitle =
+    canApprove  ? 'Review and approve recorded sales'
+    : canRecord ? 'Record and view sales'
+    : 'View recorded sales'
 
   const columns: Column<SaleSummaryResponse>[] = [
-    ...(scope === 'all'
+    ...(scope !== 'mine'
       ? ([{ key: 'marketerName', header: 'Marketer' }] as Column<SaleSummaryResponse>[])
       : []),
     { key: 'customerName', header: 'Customer' },
-    { key: 'productName',  header: 'Product'  },
-    { key: 'saleDate',     header: 'Date',   render: (s) => formatDate(s.saleDate) },
+    { key: 'productName',  header: 'Product' },
+    { key: 'saleDate', header: 'Date', render: (s) => formatDate(s.saleDate) },
     {
-      key: 'amount',
-      header: 'Amount',
+      key: 'amount', header: 'Amount',
       render: (s) => <span className="font-medium">{formatCurrency(s.amount)}</span>,
     },
     {
-      key: 'status',
-      header: 'Status',
+      key: 'status', header: 'Status',
       render: (s) => <SaleStatusBadge status={s.status} />,
     },
-    ...(canConfirm && scope === 'all'
-      ? ([
-          {
-            key: 'actions',
-            header: '',
-            className: 'text-right',
-            render: (s: SaleSummaryResponse) => (
-              <div className="flex justify-end gap-1">
-                {s.status === SaleStatus.Pending && (
-                  <>
-                    <Button
-                      size="sm"
-                      isLoading={salesApi.isActionLoading}
-                      onClick={() => void salesApi.confirmSale(s.id)}
-                    >
-                      Confirm
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="danger"
-                      onClick={() => openReject(s.id)}
-                    >
-                      Reject
-                    </Button>
-                  </>
-                )}
-                {s.status === SaleStatus.Confirmed && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    isLoading={salesApi.isActionLoading}
-                    onClick={() => void salesApi.refundSale(s.id)}
-                  >
-                    Refund
+    ...(canApprove && scope !== 'mine'
+      ? ([{
+          key: 'actions', header: '', className: 'text-right',
+          render: (s: SaleSummaryResponse) => (
+            <div className="flex justify-end gap-1">
+              {s.status === SaleStatus.Pending && (
+                <>
+                  <Button size="sm" isLoading={salesApi.isActionLoading}
+                    onClick={() => void salesApi.confirmSale(s.id).then(() =>
+                      void (scope === 'distributor' ? fetchDistributorSales() : fetchAllSales()))}>
+                    Approve
                   </Button>
-                )}
-              </div>
-            ),
-          },
-        ] as Column<SaleSummaryResponse>[])
+                  <Button size="sm" variant="danger" onClick={() => openReject(s.id)}>
+                    Reject
+                  </Button>
+                </>
+              )}
+              {s.status === SaleStatus.Confirmed && (role === ROLES.DEV || role === ROLES.ADMIN) && (
+                <Button size="sm" variant="outline" isLoading={salesApi.isActionLoading}
+                  onClick={() => void salesApi.refundSale(s.id)}>
+                  Refund
+                </Button>
+              )}
+            </div>
+          ),
+        }] as Column<SaleSummaryResponse>[])
       : []),
   ]
-
-  const submit = async (data: CreateSaleRequest) => {
-    const ok = await salesApi.createSale(data)
-    if (ok) await salesApi.fetchAllSales()
-    return ok
-  }
 
   return (
     <div>
       <PageHeader
-        title={scope === 'mine' ? 'My Sales' : 'Sales'}
-        subtitle={canConfirm ? 'Review and confirm recorded sales' : 'View recorded sales'}
+        title={title}
+        subtitle={subtitle}
         action={
           canRecord ? (
             <Button leftIcon={<Plus size={16} />} onClick={recordModal.open}>
@@ -188,7 +182,9 @@ export default function SalesPage({ scope, canRecord = false }: Props) {
         <ErrorState
           message={salesApi.error}
           onRetry={() =>
-            void (scope === 'mine' ? salesApi.fetchMySales() : salesApi.fetchAllSales())
+            void (scope === 'mine' ? salesApi.fetchMySales()
+              : scope === 'distributor' ? salesApi.fetchDistributorSales()
+              : salesApi.fetchAllSales())
           }
         />
       ) : (
@@ -208,7 +204,11 @@ export default function SalesPage({ scope, canRecord = false }: Props) {
             isLoading={salesApi.isLoading}
             keyExtractor={(s) => s.id}
             emptyTitle="No sales found"
-            emptyDescription="Recorded sales will appear here."
+            emptyDescription={
+              scope === 'distributor' ? 'No sales recorded for your assigned marketers yet.'
+              : scope === 'mine'       ? 'No sales have been recorded yet.'
+              : 'No sales have been recorded yet.'
+            }
           />
         </Card>
       )}
@@ -217,7 +217,7 @@ export default function SalesPage({ scope, canRecord = false }: Props) {
         <SaleFormModal
           isOpen={recordModal.isOpen}
           onClose={recordModal.close}
-          marketers={marketerOptions}
+          marketers={marketerList.marketers}
           customers={customers.customers}
           products={products.products}
           onSubmit={submit}
@@ -226,7 +226,7 @@ export default function SalesPage({ scope, canRecord = false }: Props) {
         />
       )}
 
-      {canConfirm && (
+      {canApprove && (
         <RejectSaleModal
           isOpen={rejectModal.isOpen}
           onClose={() => { rejectModal.close(); setRejectingId(null) }}

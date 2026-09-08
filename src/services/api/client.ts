@@ -4,7 +4,11 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from 'axios'
 
-const BASE_URL = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:5000/api'
+const BASE_URL = import.meta.env.VITE_API_BASE_URL as string
+
+if (!BASE_URL) {
+  throw new Error('VITE_API_BASE_URL is not defined. Set it in your .env file or Vercel environment variables.')
+}
 
 /**
  * Central Axios instance for all API communication.

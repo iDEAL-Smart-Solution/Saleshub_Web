@@ -9,7 +9,11 @@ export async function getAllCommissionsApi(): Promise<CommissionResponse[]> {
   catch (e) { throw normalizeApiError(e) }
 }
 
-/** GET /api/commissions/my — AuthenticatedMarketer */
+/**
+ * GET /api/commissions/my — AuthenticatedUser
+ * Returns commissions where BeneficiaryId == caller.
+ * Works for: Marketer (KpiReward/Bonus), Distributor (10%), MarketingLead (2%).
+ */
 export async function getMyCommissionsApi(): Promise<CommissionResponse[]> {
   try { return (await apiClient.get<CommissionResponse[]>('/commissions/my')).data }
   catch (e) { throw normalizeApiError(e) }
@@ -21,6 +25,12 @@ export async function getCommissionsByMarketerApi(marketerId: string): Promise<C
   catch (e) { throw normalizeApiError(e) }
 }
 
+/** GET /api/commissions/beneficiary/{beneficiaryId} — MarketingLeadOrAbove */
+export async function getCommissionsByBeneficiaryApi(beneficiaryId: string): Promise<CommissionResponse[]> {
+  try { return (await apiClient.get<CommissionResponse[]>(`/commissions/beneficiary/${beneficiaryId}`)).data }
+  catch (e) { throw normalizeApiError(e) }
+}
+
 /** GET /api/commissions/performance/{performanceId} — MarketingLeadOrAbove */
 export async function getCommissionsByPerformanceApi(performanceId: string): Promise<CommissionResponse[]> {
   try { return (await apiClient.get<CommissionResponse[]>(`/commissions/performance/${performanceId}`)).data }
@@ -28,9 +38,8 @@ export async function getCommissionsByPerformanceApi(performanceId: string): Pro
 }
 
 /**
- * PATCH /api/commissions/{id}/status
- * DevOrAdmin only. Manually advances commission through payout lifecycle.
- * Pending → Approved → Paid   (or Cancelled from Pending/Approved)
+ * PATCH /api/commissions/{id}/status — DevOrAdmin only.
+ * Lifecycle: Pending → Approved → Paid  or  Pending/Approved → Cancelled.
  */
 export async function updateCommissionStatusApi(
   id: string,

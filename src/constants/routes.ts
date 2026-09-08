@@ -33,6 +33,14 @@ export const ROUTES = {
   MARKETING_LEAD_CUSTOMERS: '/marketing-lead/customers',
   MARKETING_LEAD_PERFORMANCE: '/marketing-lead/performance',
   MARKETING_LEAD_COMMISSIONS: '/marketing-lead/commissions',
+  MARKETING_LEAD_MARKETERS: '/marketing-lead/marketers',
+
+  // Distributor
+  DISTRIBUTOR: '/distributor',
+  DISTRIBUTOR_DASHBOARD: '/distributor/dashboard',
+  DISTRIBUTOR_MARKETERS: '/distributor/marketers',
+  DISTRIBUTOR_SALES: '/distributor/sales',
+  DISTRIBUTOR_COMMISSIONS: '/distributor/commissions',
 
   // Marketer
   MARKETER: '/marketer',

@@ -12,6 +12,9 @@ describe('getRoleHomePath', () => {
   it('returns /marketing-lead/dashboard for MarketingLead', () => {
     expect(getRoleHomePath(ROLES.MARKETING_LEAD)).toBe('/marketing-lead/dashboard')
   })
+  it('returns /distributor/dashboard for Distributor', () => {
+    expect(getRoleHomePath(ROLES.DISTRIBUTOR)).toBe('/distributor/dashboard')
+  })
   it('returns /marketer/dashboard for Marketer', () => {
     expect(getRoleHomePath(ROLES.MARKETER)).toBe('/marketer/dashboard')
   })
@@ -32,5 +35,11 @@ describe('hasAnyRole', () => {
   })
   it('returns false with empty userRoles', () => {
     expect(hasAnyRole([], [ROLES.ADMIN])).toBe(false)
+  })
+  it('Distributor can access Distributor-only routes', () => {
+    expect(hasAnyRole([ROLES.DISTRIBUTOR], [ROLES.DISTRIBUTOR])).toBe(true)
+  })
+  it('Distributor cannot access Admin-only routes', () => {
+    expect(hasAnyRole([ROLES.DISTRIBUTOR], [ROLES.DEV, ROLES.ADMIN])).toBe(false)
   })
 })

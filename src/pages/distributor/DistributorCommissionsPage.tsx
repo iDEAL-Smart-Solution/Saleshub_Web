@@ -8,23 +8,16 @@ import { usePageTitle } from '@/hooks/usePageTitle'
 import { CommissionType, type CommissionResponse } from '@/types'
 import { formatCurrency, formatDate, formatMonth } from '@/utils/formatters'
 
-/**
- * Marketing Lead Commissions Page
- *
- * Shows the ML's 2% commissions across all qualifying marketer sales org-wide.
- * Uses GET /api/commissions/my which returns commissions where BeneficiaryId == caller.
- * Does NOT restrict to any single marketer or distributor.
- */
-export default function MarketingLeadCommissionsPage() {
+export default function DistributorCommissionsPage() {
   usePageTitle('My Commissions')
 
   const { commissions, isLoading, error, fetchMine } = useCommissions()
 
   useEffect(() => { void fetchMine() }, [fetchMine])
 
-  // Filter to MarketingLead-type commissions
-  const mlComms = commissions.filter(
-    (c) => c.type === CommissionType.MarketingLead,
+  // Filter only Distributor-type commissions (10% per qualifying sale)
+  const distributorComms = commissions.filter(
+    (c) => c.type === CommissionType.Distributor,
   )
 
   const columns: Column<CommissionResponse>[] = [
@@ -42,7 +35,7 @@ export default function MarketingLeadCommissionsPage() {
       key: 'rate',
       header: 'Rate',
       render: (c) =>
-        c.rate != null ? `${(c.rate * 100).toFixed(0)}%` : '2%',
+        c.rate != null ? `${(c.rate * 100).toFixed(0)}%` : '10%',
     },
     {
       key: 'amount',
@@ -67,21 +60,21 @@ export default function MarketingLeadCommissionsPage() {
     <div>
       <PageHeader
         title="My Commissions"
-        subtitle="2% commission on every qualifying marketer sale across the organisation"
+        subtitle="10% commission on qualifying sales by your assigned marketers"
       />
 
       {error ? (
         <ErrorState message={error} onRetry={() => void fetchMine()} />
-      ) : !isLoading && mlComms.length === 0 ? (
+      ) : !isLoading && distributorComms.length === 0 ? (
         <EmptyState
           title="No commissions yet"
-          description="Marketing Lead commissions appear here once qualifying marketer sales are approved."
+          description="Distributor commissions appear here once your marketers' sales are approved."
         />
       ) : (
         <Card noPadding>
           <Table
             columns={columns}
-            data={mlComms}
+            data={distributorComms}
             isLoading={isLoading}
             keyExtractor={(c) => c.id}
             emptyTitle="No commissions found"

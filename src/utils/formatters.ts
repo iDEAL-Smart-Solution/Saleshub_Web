@@ -63,9 +63,11 @@ export function getSaleStatusLabel(status: SaleStatus): string {
 }
 
 export function getCommissionTypeLabel(type: CommissionType): string {
-  if (type === CommissionType.KpiReward)  return 'KPI Reward'
-  if (type === CommissionType.Bonus)      return 'Bonus'
-  if (type === CommissionType.Adjustment) return 'Adjustment'
+  if (type === CommissionType.KpiReward)     return 'KPI Reward'
+  if (type === CommissionType.Bonus)         return 'Bonus'
+  if (type === CommissionType.Adjustment)    return 'Adjustment'
+  if (type === CommissionType.Distributor)   return 'Distributor (10%)'
+  if (type === CommissionType.MarketingLead) return 'Marketing Lead (2%)'
   return 'Unknown'
 }
 

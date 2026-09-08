@@ -12,6 +12,8 @@ export function getRoleHomePath(role: Role | string | undefined): string {
       return '/admin/dashboard'
     case ROLES.MARKETING_LEAD:
       return '/marketing-lead/dashboard'
+    case ROLES.DISTRIBUTOR:
+      return '/distributor/dashboard'
     case ROLES.MARKETER:
       return '/marketer/dashboard'
     default:

@@ -4,8 +4,10 @@ import type {
   UserResponse,
   UserSummaryResponse,
   MarketerSummaryResponse,
+  DistributorSummaryResponse,
   CreateUserRequest,
   ChangeUserRoleRequest,
+  AssignDistributorRequest,
 } from '@/types'
 
 /**
@@ -14,8 +16,7 @@ import type {
  */
 export async function getAllUsersApi(): Promise<UserSummaryResponse[]> {
   try {
-    const res = await apiClient.get<UserSummaryResponse[]>('/users')
-    return res.data
+    return (await apiClient.get<UserSummaryResponse[]>('/users')).data
   } catch (err) {
     throw normalizeApiError(err)
   }
@@ -23,13 +24,44 @@ export async function getAllUsersApi(): Promise<UserSummaryResponse[]> {
 
 /**
  * GET /api/users/marketers
- * MarketingLeadOrAbove. Returns all active Marketers (lightweight DTO).
- * Used to populate the marketer selector for sale recording and performance views.
+ * DistributorOrAbove.
+ * - Distributor: returns only their assigned marketers (scoped server-side).
+ * - MarketingLead/Admin/Dev: returns all active marketers.
  */
 export async function getActiveMarketersApi(): Promise<MarketerSummaryResponse[]> {
   try {
-    const res = await apiClient.get<MarketerSummaryResponse[]>('/users/marketers')
-    return res.data
+    return (await apiClient.get<MarketerSummaryResponse[]>('/users/marketers')).data
+  } catch (err) {
+    throw normalizeApiError(err)
+  }
+}
+
+/**
+ * GET /api/users/marketers/distributor/{distributorId}
+ * MarketingLeadOrAbove. Returns marketers assigned to a specific distributor.
+ */
+export async function getMarketersByDistributorApi(
+  distributorId: string,
+): Promise<MarketerSummaryResponse[]> {
+  try {
+    return (
+      await apiClient.get<MarketerSummaryResponse[]>(
+        `/users/marketers/distributor/${distributorId}`,
+      )
+    ).data
+  } catch (err) {
+    throw normalizeApiError(err)
+  }
+}
+
+/**
+ * GET /api/users/distributors
+ * MarketingLeadOrAbove. Returns all active Distributors.
+ * Used to populate the distributor selector when creating a marketer.
+ */
+export async function getActiveDistributorsApi(): Promise<DistributorSummaryResponse[]> {
+  try {
+    return (await apiClient.get<DistributorSummaryResponse[]>('/users/distributors')).data
   } catch (err) {
     throw normalizeApiError(err)
   }
@@ -41,8 +73,7 @@ export async function getActiveMarketersApi(): Promise<MarketerSummaryResponse[]
  */
 export async function getUserByIdApi(id: string): Promise<UserResponse> {
   try {
-    const res = await apiClient.get<UserResponse>(`/users/${id}`)
-    return res.data
+    return (await apiClient.get<UserResponse>(`/users/${id}`)).data
   } catch (err) {
     throw normalizeApiError(err)
   }
@@ -54,8 +85,7 @@ export async function getUserByIdApi(id: string): Promise<UserResponse> {
  */
 export async function getPendingMarketersApi(): Promise<UserSummaryResponse[]> {
   try {
-    const res = await apiClient.get<UserSummaryResponse[]>('/users/pending-marketers')
-    return res.data
+    return (await apiClient.get<UserSummaryResponse[]>('/users/pending-marketers')).data
   } catch (err) {
     throw normalizeApiError(err)
   }
@@ -63,12 +93,12 @@ export async function getPendingMarketersApi(): Promise<UserSummaryResponse[]> {
 
 /**
  * POST /api/users
- * DevOrAdmin only. Creates a user with an explicit role and password.
+ * CanCreateMarketer (Admin/Dev/MarketingLead/Distributor).
+ * Creates a user. When role=Marketer, distributorId is required (unless caller is Distributor).
  */
 export async function createUserApi(data: CreateUserRequest): Promise<UserResponse> {
   try {
-    const res = await apiClient.post<UserResponse>('/users', data)
-    return res.data
+    return (await apiClient.post<UserResponse>('/users', data)).data
   } catch (err) {
     throw normalizeApiError(err)
   }
@@ -86,9 +116,7 @@ export async function approveMarketerApi(id: string): Promise<void> {
   }
 }
 
-/**
- * POST /api/users/:id/activate
- */
+/** POST /api/users/:id/activate */
 export async function activateUserApi(id: string): Promise<void> {
   try {
     await apiClient.post(`/users/${id}/activate`)
@@ -97,9 +125,7 @@ export async function activateUserApi(id: string): Promise<void> {
   }
 }
 
-/**
- * POST /api/users/:id/deactivate
- */
+/** POST /api/users/:id/deactivate */
 export async function deactivateUserApi(id: string): Promise<void> {
   try {
     await apiClient.post(`/users/${id}/deactivate`)
@@ -108,12 +134,26 @@ export async function deactivateUserApi(id: string): Promise<void> {
   }
 }
 
-/**
- * PATCH /api/users/:id/role
- */
+/** PATCH /api/users/:id/role */
 export async function changeUserRoleApi(id: string, data: ChangeUserRoleRequest): Promise<void> {
   try {
     await apiClient.patch(`/users/${id}/role`, data)
+  } catch (err) {
+    throw normalizeApiError(err)
+  }
+}
+
+/**
+ * PATCH /api/users/:id/distributor
+ * DevOrAdmin only. Reassigns a marketer to a different distributor.
+ * Historical sales retain their original distributor snapshot.
+ */
+export async function reassignDistributorApi(
+  marketerId: string,
+  data: AssignDistributorRequest,
+): Promise<void> {
+  try {
+    await apiClient.patch(`/users/${marketerId}/distributor`, data)
   } catch (err) {
     throw normalizeApiError(err)
   }

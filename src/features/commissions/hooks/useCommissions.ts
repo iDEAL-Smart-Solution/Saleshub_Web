@@ -3,6 +3,7 @@ import {
   getAllCommissionsApi,
   getMyCommissionsApi,
   getCommissionsByMarketerApi,
+  getCommissionsByBeneficiaryApi,
   getCommissionsByPerformanceApi,
   updateCommissionStatusApi,
 } from '@/services/api/commission.service'
@@ -16,66 +17,51 @@ export function useCommissions() {
   const [error, setError] = useState<string | null>(null)
 
   const fetchAll = useCallback(async () => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      setCommissions(await getAllCommissionsApi())
-    } catch (e) {
-      setError(normalizeApiError(e).message)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
-
-  const fetchMine = useCallback(async () => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      setCommissions(await getMyCommissionsApi())
-    } catch (e) {
-      setError(normalizeApiError(e).message)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
-
-  const fetchByMarketer = useCallback(async (marketerId: string) => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      setCommissions(await getCommissionsByMarketerApi(marketerId))
-    } catch (e) {
-      setError(normalizeApiError(e).message)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
-
-  const fetchByPerformance = useCallback(async (performanceId: string) => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      setCommissions(await getCommissionsByPerformanceApi(performanceId))
-    } catch (e) {
-      setError(normalizeApiError(e).message)
-    } finally {
-      setIsLoading(false)
-    }
+    setIsLoading(true); setError(null)
+    try { setCommissions(await getAllCommissionsApi()) }
+    catch (e) { setError(normalizeApiError(e).message) }
+    finally { setIsLoading(false) }
   }, [])
 
   /**
-   * Admin manually moves a commission through its payout lifecycle.
-   * Updates local state optimistically so the table reflects the change immediately.
+   * GET /api/commissions/my
+   * Works for all roles — returns commissions where BeneficiaryId == caller.
+   * Marketer → KpiReward/Bonus, Distributor → 10%, MarketingLead → 2%.
    */
+  const fetchMine = useCallback(async () => {
+    setIsLoading(true); setError(null)
+    try { setCommissions(await getMyCommissionsApi()) }
+    catch (e) { setError(normalizeApiError(e).message) }
+    finally { setIsLoading(false) }
+  }, [])
+
+  const fetchByMarketer = useCallback(async (marketerId: string) => {
+    setIsLoading(true); setError(null)
+    try { setCommissions(await getCommissionsByMarketerApi(marketerId)) }
+    catch (e) { setError(normalizeApiError(e).message) }
+    finally { setIsLoading(false) }
+  }, [])
+
+  const fetchByBeneficiary = useCallback(async (beneficiaryId: string) => {
+    setIsLoading(true); setError(null)
+    try { setCommissions(await getCommissionsByBeneficiaryApi(beneficiaryId)) }
+    catch (e) { setError(normalizeApiError(e).message) }
+    finally { setIsLoading(false) }
+  }, [])
+
+  const fetchByPerformance = useCallback(async (performanceId: string) => {
+    setIsLoading(true); setError(null)
+    try { setCommissions(await getCommissionsByPerformanceApi(performanceId)) }
+    catch (e) { setError(normalizeApiError(e).message) }
+    finally { setIsLoading(false) }
+  }, [])
+
   const updateStatus = useCallback(
     async (id: string, status: CommissionStatus, note?: string): Promise<boolean> => {
-      setIsActionLoading(true)
-      setError(null)
+      setIsActionLoading(true); setError(null)
       try {
         const updated = await updateCommissionStatusApi(id, status, note)
-        setCommissions((prev) =>
-          prev.map((c) => (c.id === updated.id ? updated : c)),
-        )
+        setCommissions((prev) => prev.map((c) => (c.id === updated.id ? updated : c)))
         return true
       } catch (e) {
         setError(normalizeApiError(e).message)
@@ -95,6 +81,7 @@ export function useCommissions() {
     fetchAll,
     fetchMine,
     fetchByMarketer,
+    fetchByBeneficiary,
     fetchByPerformance,
     updateStatus,
     clearError: () => setError(null),

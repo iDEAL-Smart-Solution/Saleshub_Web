@@ -1,5 +1,6 @@
 export { useUsers }           from './hooks/useUsers'
 export { useMarketers }       from './hooks/useMarketers'
+export { useDistributors }    from './hooks/useDistributors'
 export { default as UserStatusBadge }  from './components/UserStatusBadge'
 export { default as CreateUserModal }  from './components/CreateUserModal'
 export { default as UserDetailModal }  from './components/UserDetailModal'

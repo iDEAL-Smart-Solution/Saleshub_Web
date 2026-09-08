@@ -102,6 +102,9 @@ export default function UserDetailModal({
           <Row label="State"          value={user.state} />
           <Row label="City"           value={user.city} />
           <Row label="Address"        value={user.houseAddress} />
+          {user.roles.includes('Marketer') && (
+            <Row label="Distributor" value={user.distributorName ?? 'Not assigned'} />
+          )}
           <Row label="Created"        value={user.createdAt ? new Date(user.createdAt).toLocaleDateString() : undefined} />
           <Row label="Last login"     value={user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : undefined} />
           <Row label="Last modified"  value={user.lastModifiedAt ? new Date(user.lastModifiedAt).toLocaleString() : undefined} />

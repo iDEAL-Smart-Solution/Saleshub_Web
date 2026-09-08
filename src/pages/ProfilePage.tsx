@@ -53,14 +53,17 @@ export default function ProfilePage() {
         <Row label="Last name"  value={user.lastName}  />
         <Row label="Email"      value={user.email}     />
         <Row label="User ID"    value={user.id}        />
+        {user.roles.includes('Marketer') && (
+          <Row
+            label="Distributor"
+            value={user.distributorName ?? 'Not assigned'}
+          />
+        )}
 
         {/* ⚠️ Note: The UserAuthInfo returned by the backend at login only contains
-            Id, FirstName, LastName, Email, Roles.
+            Id, FirstName, LastName, Email, Roles, and DistributorName (for Marketers).
             Extended profile fields (phone, address, etc.) would require a GET /api/users/:id
-            call, which requires DevOrAdmin policy. Displaying what is available from auth token. */}
-        <p className="mt-4 text-xs text-[#9E9E9E]">
-          To view full profile details, contact your administrator.
-        </p>
+            call, which requires DevOrAdmin policy. */}
 
         {/* Actions */}
         <div className="mt-6 pt-5 border-t border-[#EEEEEE]">

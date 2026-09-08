@@ -7,6 +7,8 @@ export interface UserAuthInfo {
   lastName: string
   email: string
   roles: Role[]
+  distributorId?: string | null
+  distributorName?: string | null
 }
 
 // ── Matches backend AuthResponse ─────────────────────────────────────────────

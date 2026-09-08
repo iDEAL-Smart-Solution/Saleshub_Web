@@ -4,7 +4,9 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from 'axios'
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL as string
+const BASE_URL =
+  (import.meta.env.VITE_API_BASE_URL as string) ||
+  'https://saleshub.api.idealsmartsolutions.com/api'
 
 /**
  * Central Axios instance for all API communication.

@@ -60,6 +60,17 @@ export default function UsersPage() {
     approveModal.open()
   }
 
+  // Called from UserDetailModal when viewing a pending marketer —
+  // closes the detail view and opens the approve+assign flow.
+  const handleApproveFromDetail = (userId: string) => {
+    const marketer = pendingMarketers.find((m) => m.id === userId)
+    if (marketer) {
+      detailModal.close()
+      setSelectedMarketer(marketer)
+      approveModal.open()
+    }
+  }
+
   const handleApprove = async (marketerId: string, distributorId: string): Promise<boolean> => {
     const ok = await approveMarketer(marketerId, distributorId)
     if (ok) {
@@ -240,6 +251,7 @@ export default function UsersPage() {
         isLoading={isLoading && !selectedUser}
         onActivate={handleActivate}
         onDeactivate={handleDeactivate}
+        onApprove={handleApproveFromDetail}
         isActionLoading={isActionLoading}
       />
 

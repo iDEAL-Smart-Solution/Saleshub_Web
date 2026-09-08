@@ -12,6 +12,8 @@ interface Props {
   isLoading: boolean
   onActivate?: (id: string) => void
   onDeactivate?: (id: string) => void
+  /** Called when the user is a pending self-registered Marketer — routes to the approve+assign flow. */
+  onApprove?: (id: string) => void
   isActionLoading?: boolean
 }
 
@@ -25,8 +27,13 @@ function Row({ label, value }: { label: string; value?: string | null }) {
 }
 
 export default function UserDetailModal({
-  isOpen, onClose, user, isLoading, onActivate, onDeactivate, isActionLoading,
+  isOpen, onClose, user, isLoading, onActivate, onDeactivate, onApprove, isActionLoading,
 }: Props) {
+  // A pending self-registered marketer is inactive and has the Marketer role.
+  // Activating them requires a distributor assignment — route through the approve flow.
+  const isPendingMarketer =
+    user !== null && !user.isActive && user.roles.includes('Marketer')
+
   return (
     <Modal
       isOpen={isOpen}
@@ -47,7 +54,20 @@ export default function UserDetailModal({
                   Deactivate
                 </Button>
               )}
-              {!user.isActive && onActivate && (
+
+              {/* Pending marketer — must go through approve+assign flow */}
+              {isPendingMarketer && onApprove && (
+                <Button
+                  size="sm"
+                  isLoading={isActionLoading}
+                  onClick={() => onApprove(user.id)}
+                >
+                  Approve & assign distributor
+                </Button>
+              )}
+
+              {/* Non-marketer inactive users — plain activate is fine */}
+              {!user.isActive && !isPendingMarketer && onActivate && (
                 <Button
                   size="sm" variant="secondary"
                   isLoading={isActionLoading}
@@ -56,6 +76,7 @@ export default function UserDetailModal({
                   Activate
                 </Button>
               )}
+
               <Button size="sm" variant="outline" onClick={onClose}>Close</Button>
             </div>
           </div>
